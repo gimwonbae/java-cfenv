@@ -107,72 +107,17 @@ afterEvaluate { Project project ->
 publishing {
     repositories {
         maven {
-            url = project.properties.getOrDefault('publicationRepository', "${System.getenv('HOME')}/.m2/repository")
+            name = "java-cfenv"
+            url = uri("https://maven.pkg.github.com/gimwonbae/java-cfenv")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+            }
         }
     }
     publications {
-        mavenJava(MavenPublication) {
-            suppressAllPomMetadataWarnings()
-            from components.java
-
-            pom {
-                afterEvaluate {
-                    name = project.description
-                    description = project.description
-                    url = "https://github.com/pivotal-cf/java-cfenv/"
-                    organization {
-                        name = "Pivotal Software, Inc."
-                        url = "https://www.spring.io"
-                    }
-                    licenses {
-                        license {
-                            name = "The Apache Software License, Version 2.0"
-                            url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-                            distribution = "repo"
-                        }
-                    }
-                    scm {
-                        url = "https://github.com/pivotal-cf/java-cfenv"
-                        connection = "scm:git:git://github.com/pivotal-cf/java-cfenv.git"
-                        developerConnection = "scm:git:ssh://git@github.com/pivotal-cf/java-cfenv.git"
-                    }
-                    developers {
-                        developer {
-                            id = "royclarkson"
-                            name = "Roy Clarkson"
-                            email = "rclarkson@pivotal.io"
-                        }
-                    }
-                    issueManagement {
-                        system = "GitHub"
-                        url = "https://github.com/pivotal-cf/java-cfenv/issues"
-                    }
-                }
-                withXml {
-                    def pomNode = asNode()
-                    def dependencyManagementNode = pomNode.get('dependencyManagement')
-                    if (dependencyManagementNode) pomNode.remove(dependencyManagementNode)
-
-                    if (project.name == 'java-cfenv-test-support') {
-                        def cfenvDependencies = pomNode.get('dependencies')[0].findAll { it.get('artifactId')[0].text() == 'java-cfenv' }
-                        assert cfenvDependencies.size() == 2
-                        cfenvDependencies[1].appendNode('type', "test-jar")
-                    }
-                }
-            }
-
-            // Published pom will use fully-qualified dependency versions and no BOMs
-            versionMapping {
-                usage('java-api') {
-                    fromResolutionOf('runtimeClasspath')
-                    if (project.configurations.findByName('testFixturesRuntimeClasspath')) {
-                        fromResolutionOf('testFixturesRuntimeClasspath')
-                    }
-                }
-                usage('java-runtime') {
-                    fromResolutionResult()
-                }
-            }
+        gpr(MavenPublication) {
+            from(components.java)
         }
     }
 }
